@@ -287,7 +287,7 @@
         text = this.parseInlineCallback(text);
         // autolink url
         if (enableAutoLink) {
-          text = text.replace(/(^|[^\"])(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|(?:mailto:)?[_a-z0-9-\.\+]+@[_\w-]+(?:\.[a-z]{2,})+)($|[^\"])/g, (...matches) => {
+          text = text.replace(/(^|[^\"])(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\b([-a-zA-Z0-9@:%_\+.~#?&\/=]*)|(?:mailto:)?[_a-z0-9-\.\+]+@[_\w-]+(?:\.[a-z]{2,})+)($|[^\"])/g, (...matches) => {
             var link, url;
             url = this.cleanUrl(matches[2]);
             link = this.call('parseLink', matches[2]);
@@ -583,44 +583,46 @@
 
       parseBlockTable(block, key, line, state, lines) {
         var align, aligns, head, j, len, matches, row, rows;
-        if (!!(matches = line.match(/^((?:(?:(?:\||\+)(?:[ :]*\-+[ :]*)(?:\||\+))|(?:(?:[ :]*\-+[ :]*)(?:\||\+)(?:[ :]*\-+[ :]*))|(?:(?:[ :]*\-+[ :]*)(?:\||\+))|(?:(?:\||\+)(?:[ :]*\-+[ :]*)))+)$/))) {
-          if (this.isBlock('table')) {
-            block[3][0].push(block[3][2]);
-            block[3][2] += 1;
-            this.setBlock(key, block[3]);
-          } else {
-            head = 0;
-            if ((block == null) || block[0] !== 'normal' || lines[block[2]].match(/^\s*$/)) {
-              this.startBlock('table', key);
+        if (!!(matches = line.match(/^\s*(\|?[ :]*-{2,}[ :]*(?:[\|\+][ :]*-{2,}[ :]*)*\|?)\s*$/))) {
+          if (matches[1].indexOf('|') >= 0 || matches[1].indexOf('+') >= 0) {
+            if (this.isBlock('table')) {
+              block[3][0].push(block[3][2]);
+              block[3][2] += 1;
+              this.setBlock(key, block[3]);
             } else {
-              head = 1;
-              this.backBlock(1, 'table');
-            }
-            if (matches[1][0] === '|') {
-              matches[1] = matches[1].substring(1);
-              if (matches[1][matches[1].length - 1] === '|') {
-                matches[1] = matches[1].substring(0, matches[1].length - 1);
+              head = 0;
+              if ((block == null) || block[0] !== 'normal' || lines[block[2]].match(/^\s*$/)) {
+                this.startBlock('table', key);
+              } else {
+                head = 1;
+                this.backBlock(1, 'table');
               }
-            }
-            rows = matches[1].split(/\+|\|/);
-            aligns = [];
-            for (j = 0, len = rows.length; j < len; j++) {
-              row = rows[j];
-              align = 'none';
-              if (!!(matches = row.match(/^\s*(:?)\-+(:?)\s*$/))) {
-                if (!!matches[1] && !!matches[2]) {
-                  align = 'center';
-                } else if (!!matches[1]) {
-                  align = 'left';
-                } else if (!!matches[2]) {
-                  align = 'right';
+              if (matches[1][0] === '|') {
+                matches[1] = matches[1].substring(1);
+                if (matches[1][matches[1].length - 1] === '|') {
+                  matches[1] = matches[1].substring(0, matches[1].length - 1);
                 }
               }
-              aligns.push(align);
+              rows = matches[1].split(/\+|\|/);
+              aligns = [];
+              for (j = 0, len = rows.length; j < len; j++) {
+                row = rows[j];
+                align = 'none';
+                if (!!(matches = row.match(/^\s*(:?)\-+(:?)\s*$/))) {
+                  if (!!matches[1] && !!matches[2]) {
+                    align = 'center';
+                  } else if (!!matches[1]) {
+                    align = 'left';
+                  } else if (!!matches[2]) {
+                    align = 'right';
+                  }
+                }
+                aligns.push(align);
+              }
+              this.setBlock(key, [[head], aligns, head + 1]);
             }
-            this.setBlock(key, [[head], aligns, head + 1]);
+            return false;
           }
-          return false;
         }
         return true;
       }
@@ -649,7 +651,7 @@
       }
 
       parseBlockShr(block, key, line) {
-        if (!!(line.match(/^(\* *){3,}\s*$/))) {
+        if (!!(line.match(/^\*{3,}\s*$/))) {
           this.startBlock('hr', key).endBlock();
           return false;
         }
@@ -657,7 +659,7 @@
       }
 
       parseBlockDhr(block, key, line) {
-        if (!!(line.match(/^(- *){3,}\s*$/))) {
+        if (!!(line.match(/^-{3,}\s*$/))) {
           this.startBlock('hr', key).endBlock();
           return false;
         }
@@ -819,7 +821,7 @@
       }
 
       parseList(lines, value, start) {
-        var html, j, key, l, last, len, len1, line, matches, row, rows, space, suffix, tab, type;
+        var html, j, key, l, last, len, len1, line, matches, olStart, row, rows, space, suffix, tab, type;
         html = '';
         [space, type, tab] = value;
         rows = [];
@@ -829,9 +831,9 @@
           line = lines[key];
           if (matches = line.match(new RegExp(`^(\\s{${space}})((?:[0-9]+\\.?)|\\-|\\+|\\*)(\\s+)(.*)$`))) {
             if (type === 'ol' && key === 0) {
-              start = parseInt(matches[2]);
-              if (start !== 1) {
-                suffix = ' start="' + start + '"';
+              olStart = parseInt(matches[2]);
+              if (olStart !== 1) {
+                suffix = ' start="' + olStart + '"';
               }
             }
             rows.push([matches[4]]);

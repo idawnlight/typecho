@@ -4,13 +4,13 @@ include 'header.php';
 include 'menu.php';
 
 $actionUrl = $security->getTokenUrl(
-    Typecho_Router::url('do', array('action' => 'backup', 'widget' => 'Backup'),
-        Typecho_Common::url('index.php', $options->rootUrl)));
+    \Typecho\Router::url('do', array('action' => 'backup', 'widget' => 'Backup'),
+        \Typecho\Common::url('index.php', $options->rootUrl)));
 
-$backupFiles = Typecho_Widget::widget('Widget_Backup')->listFiles();
+$backupFiles = \Widget\Backup::alloc()->listFiles();
 ?>
 
-<div class="main">
+<main class="main">
     <div class="body container">
         <?php include 'page-title.php'; ?>
         <div class="row typecho-page-main" role="main">
@@ -31,7 +31,7 @@ $backupFiles = Typecho_Widget::widget('Widget_Backup')->listFiles();
 
             <div id="backup-secondary" class="col-mb-12 col-tb-4" role="form">
                 <h3><?php _e('恢复数据'); ?></h3>
-                <ul class="typecho-option-tabs clearfix">
+                <ul class="typecho-option-tabs">
                     <li class="active w-50"><a href="#from-upload"><?php _e('上传'); ?></a></li>
                     <li class="w-50"><a href="#from-server"><?php _e('从服务器'); ?></a></li>
                 </ul>
@@ -79,11 +79,12 @@ $backupFiles = Typecho_Widget::widget('Widget_Backup')->listFiles();
             </div>
         </div>
     </div>
-</div>
+</main>
 
 <?php
 include 'copyright.php';
 include 'common-js.php';
+include 'form-js.php';
 ?>
 <script>
     $('#backup-secondary .typecho-option-tabs li').click(function() {

@@ -1,27 +1,13 @@
 <?php
-// vim: set et sw=4 ts=4 sts=4 fdm=marker ff=unix fenc=utf8
-/**
- * Typecho Blog Platform
- *
- * 验证类
- * <code>
- * $test = "hello";
- * $Validation  = new TypechoValidation();
- * $Validation->form($test, array("alpha" => "不是字符");
- * var_dump($Validation->getErrorMsg());
- * </code>
- *
- * @copyright  Copyright (c) 2008 Typecho team (http://www.typecho.org)
- * @license    GNU General Public License 2.0
- * @version    $Id: Validation.php 106 2008-04-11 02:23:54Z magike.net $
- */
+
+namespace Typecho;
 
 /**
  * 验证类
  *
  * @package Validate
  */
-class Typecho_Validate
+class Validate
 {
     /**
      * 内部数据
@@ -29,7 +15,7 @@ class Typecho_Validate
      * @access private
      * @var array
      */
-    private $_data;
+    private array $data;
 
     /**
      * 当前验证指针
@@ -37,7 +23,7 @@ class Typecho_Validate
      * @access private
      * @var string
      */
-    private $_key;
+    private string $key;
 
     /**
      * 验证规则数组
@@ -45,7 +31,7 @@ class Typecho_Validate
      * @access private
      * @var array
      */
-    private $_rules = array();
+    private array $rules = [];
 
     /**
      * 中断模式,一旦出现验证错误即抛出而不再继续执行
@@ -53,132 +39,31 @@ class Typecho_Validate
      * @access private
      * @var boolean
      */
-    private $_break = false;
-
-    /**
-     * 增加验证规则
-     *
-     * @access public
-     * @param string $key 数值键值
-     * @param string $rule 规则名称
-     * @param string $message 错误字符串
-     * @return $this
-     */
-    public function addRule(string $key, string $rule, string $message): Typecho_Validate
-    {
-        if (func_num_args() <= 3) {
-            $this->_rules[$key][] = [$rule, $message];
-        } else {
-            $params = func_get_args();
-            $params = array_splice($params, 3);
-            $this->_rules[$key][] = array_merge([$rule, $message], $params);
-        }
-
-        return $this;
-    }
-
-    /**
-     * 设置为中断模式
-     *
-     * @access public
-     * @return void
-     */
-    public function setBreak()
-    {
-        $this->_break = true;
-    }
-
-    /**
-     * Run the Validator
-     * This function does all the work.
-     *
-     * @access	public
-     * @param   array $data 需要验证的数据
-     * @param array|null $rules 验证数据遵循的规则
-     * @return	array
-     */
-    public function run(array $data, array $rules = null): array
-    {
-        $result = [];
-        $this->_data = $data;
-        $rules = empty($rules) ? $this->_rules : $rules;
-
-        // Cycle through the rules and test for errors
-        foreach ($rules as $key => $rules) {
-            $this->_key = $key;
-            $data[$key] = (is_array($data[$key]) ? 0 == count($data[$key])
-                : 0 == strlen($data[$key])) ? null : $data[$key];
-
-            foreach ($rules as $params) {
-                $method = $params[0];
-
-                if ('required' != $method && 'confirm' != $method && 0 == strlen($data[$key])) {
-                    continue;
-                }
-
-                $message = $params[1];
-                $params[1] = $data[$key];
-                $params = array_slice($params, 1);
-
-                if (!call_user_func_array(is_array($method) ? $method : [$this, $method], $params)) {
-                    $result[$key] = $message;
-                    break;
-                }
-            }
-
-            /** 开启中断 */
-            if ($this->_break && $result) {
-                break;
-            }
-        }
-
-        return $result;
-    }
+    private bool $break = false;
 
     /**
      * 最小长度
      *
      * @access public
+     *
      * @param string $str 待处理的字符串
      * @param integer $length 最小长度
+     *
      * @return boolean
      */
     public static function minLength(string $str, int $length): bool
     {
-        return (Typecho_Common::strLen($str) >= $length);
-    }
-
-    /**
-     * 验证输入是否一致
-     *
-     * @access public
-     * @param string|null $str 待处理的字符串
-     * @param string $key 需要一致性检查的键值
-     * @return boolean
-     */
-    public function confirm(?string $str, string $key): bool
-    {
-        return !empty($this->_data[$key]) ? ($str == $this->_data[$key]) : empty($str);
-    }
-
-    /**
-     * 是否为空
-     *
-     * @access public
-     * @param string|null $str 待处理的字符串
-     * @return boolean
-     */
-    public function required(?string $str): bool
-    {
-        return !empty($this->_data[$this->_key]);
+        return (Common::strLen($str) >= $length);
     }
 
     /**
      * 枚举类型判断
      *
      * @access public
+     *
      * @param string $str 待处理的字符串
      * @param array $params 枚举值
+     *
      * @return bool
      */
     public static function enum(string $str, array $params): bool
@@ -192,85 +77,93 @@ class Typecho_Validate
      *
      * @param string $str
      * @param int $length
+     *
      * @return bool
      */
     public static function maxLength(string $str, int $length): bool
     {
-        return (Typecho_Common::strLen($str) < $length);
+        return (Common::strLen($str) < $length);
     }
 
     /**
      * Valid Email
      *
      * @access public
+     *
      * @param string $str
+     *
      * @return boolean
      */
     public static function email(string $str): bool
     {
-        return preg_match("/^[_a-z0-9-\.+]+@([-a-z0-9]+\.)+[a-z]{2,}$/i", $str);
+        $email = filter_var($str, FILTER_SANITIZE_EMAIL);
+        return !!filter_var($str, FILTER_VALIDATE_EMAIL) && ($email === $str);
     }
 
     /**
      * 验证是否为网址
      *
      * @access public
+     *
      * @param string $str
+     *
      * @return boolean
      */
     public static function url(string $str): bool
     {
-        $parts = @parse_url($str);
-        if (!$parts) {
-            return false;
-        }
-
-        return isset($parts['scheme']) &&
-            in_array($parts['scheme'], ['http', 'https', 'ftp']) &&
-            !preg_match('/(\(|\)|\\\|"|<|>|[\x00-\x08]|[\x0b-\x0c]|[\x0e-\x19])/', $str);
+        $url = Common::safeUrl($str);
+        return !!filter_var($str, FILTER_VALIDATE_URL) && ($url === $str);
     }
 
     /**
      * Alpha
      *
      * @access public
-     * @param string
+     *
+     * @param string $str
+     *
      * @return boolean
      */
     public static function alpha(string $str): bool
     {
-        return preg_match("/^([a-z])+$/i", $str) ? true : false;
+        return ctype_alpha($str);
     }
 
     /**
      * Alpha-numeric
      *
      * @access public
-     * @param string
+     *
+     * @param string $str
+     *
      * @return boolean
      */
     public static function alphaNumeric(string $str): bool
     {
-        return preg_match("/^([a-z0-9])+$/i", $str);
+        return ctype_alnum($str);
     }
 
     /**
      * Alpha-numeric with underscores and dashes
      *
      * @access public
-     * @param string
+     *
+     * @param string $str
+     *
      * @return boolean
      */
     public static function alphaDash(string $str): bool
     {
-        return preg_match("/^([_a-z0-9-])+$/i", $str) ? true : false;
+        return !!preg_match("/^([_a-z0-9-])+$/i", $str);
     }
 
     /**
      * 对xss字符串的检测
      *
      * @access public
+     *
      * @param string $str
+     *
      * @return boolean
      */
     public static function xssCheck(string $str): bool
@@ -285,9 +178,9 @@ class Typecho_Validate
             // 0{0,7} matches any padded zeros, which are optional and go up to 8 chars
 
             // &#x0040 @ search for the hex values
-            $str = preg_replace('/(&#[xX]0{0,8}'.dechex(ord($search[$i])).';?)/i', $search[$i], $str); // with a ;
+            $str = preg_replace('/(&#[xX]0{0,8}' . dechex(ord($search[$i])) . ';?)/i', $search[$i], $str); // with a ;
             // &#00064 @ 0{0,7} matches '0' zero to seven times
-            $str = preg_replace('/(&#0{0,8}'.ord($search[$i]).';?)/', $search[$i], $str); // with a ;
+            $str = preg_replace('/(&#0{0,8}' . ord($search[$i]) . ';?)/', $search[$i], $str); // with a ;
         }
 
         return !preg_match('/(\(|\)|\\\|"|<|>|[\x00-\x08]|[\x0b-\x0c]|[\x0e-\x19]|' . "\r|\n|\t" . ')/', $str);
@@ -297,23 +190,152 @@ class Typecho_Validate
      * Numeric
      *
      * @access public
+     *
      * @param mixed $str
+     *
      * @return boolean
      */
     public static function isFloat($str): bool
     {
-        return preg_match("/^[0-9\.]+$/", $str);
+        return filter_var($str, FILTER_VALIDATE_FLOAT) !== false;
     }
 
     /**
      * Is Numeric
      *
      * @access public
+     *
      * @param mixed $str
+     *
      * @return boolean
      */
     public static function isInteger($str): bool
     {
-        return is_numeric($str);
+        return filter_var($str, FILTER_VALIDATE_INT) !== false;
+    }
+
+    /**
+     * 正则表达式验证
+     *
+     * @param string $str
+     * @param string $pattern
+     * @return bool
+     */
+    public static function regexp(string $str, string $pattern): bool
+    {
+        return preg_match($pattern, $str) === 1;
+    }
+
+    /**
+     * 增加验证规则
+     *
+     * @access public
+     *
+     * @param string $key 数值键值
+     * @param string|callable $rule 规则名称
+     * @param string $message 错误字符串
+     *
+     * @return $this
+     */
+    public function addRule(string $key, $rule, string $message): Validate
+    {
+        if (func_num_args() <= 3) {
+            $this->rules[$key][] = [$rule, $message];
+        } else {
+            $params = func_get_args();
+            $params = array_splice($params, 3);
+            $this->rules[$key][] = array_merge([$rule, $message], $params);
+        }
+
+        return $this;
+    }
+
+    /**
+     * 设置为中断模式
+     *
+     * @access public
+     * @return void
+     */
+    public function setBreak()
+    {
+        $this->break = true;
+    }
+
+    /**
+     * Run the Validator
+     * This function does all the work.
+     *
+     * @access    public
+     *
+     * @param array $data 需要验证的数据
+     * @param array|null $rules 验证数据遵循的规则
+     *
+     * @return    array
+     */
+    public function run(array $data, ?array $rules = null): array
+    {
+        $result = [];
+        $this->data = $data;
+        $rules = empty($rules) ? $this->rules : $rules;
+
+        // Cycle through the rules and test for errors
+        foreach ($rules as $key => $rule) {
+            $this->key = $key;
+            $data[$key] = (is_array($data[$key]) ? 0 == count($data[$key])
+                : 0 == strlen($data[$key] ?? '')) ? null : $data[$key];
+
+            foreach ($rule as $params) {
+                $method = $params[0];
+
+                if ('required' != $method && 'confirm' != $method && 0 == strlen($data[$key] ?? '')) {
+                    continue;
+                }
+
+                $message = $params[1];
+                $params[1] = $data[$key];
+                $params = array_slice($params, 1);
+
+                if (!call_user_func_array(is_callable($method) ? $method : [$this, $method], $params)) {
+                    $result[$key] = $message;
+                    break;
+                }
+            }
+
+            /** 开启中断 */
+            if ($this->break && $result) {
+                break;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * 验证输入是否一致
+     *
+     * @access public
+     *
+     * @param string|null $str 待处理的字符串
+     * @param string $key 需要一致性检查的键值
+     *
+     * @return boolean
+     */
+    public function confirm(?string $str, string $key): bool
+    {
+        return !empty($this->data[$key]) ? ($str == $this->data[$key]) : empty($str);
+    }
+
+    /**
+     * 是否为空
+     *
+     * @access public
+     *
+     * @return boolean
+     */
+    public function required(): bool
+    {
+        return array_key_exists($this->key, $this->data) &&
+            (is_array($this->data[$this->key]) ? 0 < count($this->data[$this->key])
+                : 0 < strlen($this->data[$this->key] ?? ''));
     }
 }

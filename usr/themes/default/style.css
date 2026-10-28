@@ -36,6 +36,7 @@ pre {
   max-height: 400px;
 }
 pre code {
+  display: block;
   padding: 3px;
   color: #444;
 }
@@ -96,18 +97,6 @@ textarea {
 .widget a:hover,
 .comment-content a:hover {
   border-bottom-color: transparent;
-}
-
-.browsehappy {
-  padding: 8px 0;
-  background: #FBE3E4;
-  color: #8A1F11;
-  text-align: center;
-}
-.browsehappy a {
-  color: #8A1F11;
-  text-decoration: underline;
-  font-weight: bold;
 }
 
 /* ------------------
